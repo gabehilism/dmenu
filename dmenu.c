@@ -75,6 +75,7 @@ static int textw(const char *text);
 /* variables */
 static char *maxname = NULL;
 static char *prompt = NULL;
+static char **tokens = NULL;
 static char text[4096];
 static int cmdw = 0;
 static int promptw = 0;
@@ -84,6 +85,7 @@ static int screen;
 static unsigned int mw, mh;
 static unsigned int numlockmask = 0;
 static Bool running = True;
+static Bool xmms = False;
 static Display *dpy;
 static DC dc;
 static Item *allitems = NULL;  /* first of all items */
@@ -578,22 +580,55 @@ kpress(XKeyEvent * e) {
 	drawmenu();
 }
 
+unsigned int tokenize(char *pat, char **tok)
+{
+	unsigned int i = 0;
+	char tmp[4096] = {0};
+
+	strncpy(tmp, pat, strlen(pat));
+	tok[0] = strtok(tmp, " ");
+
+	while(tok[i] && i < maxtokens)
+		tok[++i] = strtok(NULL, " ");
+	return i;
+}
+
 void
 match(char *pattern) {
-	unsigned int plen;
+	unsigned int plen, tokencnt = 0;
+	char append = 0;
 	Item *i, *itemend, *lexact, *lprefix, *lsubstr, *exactend, *prefixend, *substrend;
 
 	if(!pattern)
 		return;
-	plen = strlen(pattern);
+
+	if(!xmms)
+		tokens[(tokencnt = 1)-1] = pattern;
+	else
+		if(!(tokencnt = tokenize(pattern, tokens)))
+			tokens[(tokencnt = 1)-1] = "";
 	item = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
-	for(i = allitems; i; i = i->next)
-		if(!fstrncmp(pattern, i->text, plen + 1))
+	for(i = allitems; i; i = i->next) {
+		for(int j = 0; j < tokencnt; ++j) {
+			plen = strlen(tokens[j]);
+			if(!fstrncmp(tokens[j], i->text, plen + 1))
+				append = !append || append > 1 ? 1 : append;
+			else if(!fstrncmp(tokens[j], i->text, plen ))
+				append = !append || append > 2 ? 2 : append;
+			else if(fstrstr(i->text, tokens[j]))
+				append = append > 0 && append < 3 ? append : 3;
+			else {
+				append = 0;
+				break;
+			}
+		}
+		if(append == 1)
 			appenditem(i, &lexact, &exactend);
-		else if(!fstrncmp(pattern, i->text, plen))
+		else if(append == 2)
 			appenditem(i, &lprefix, &prefixend);
-		else if(fstrstr(i->text, pattern))
+		else if(append == 3)
 			appenditem(i, &lsubstr, &substrend);
+	}
 	if(lexact) {
 		item = lexact;
 		itemend = exactend;
@@ -748,6 +783,7 @@ setup(Bool topbar) {
 	if(prompt)
 		promptw = MIN(textw(prompt), mw / 5);
 	text[0] = '\0';
+	tokens = malloc((xmms?maxtokens:1)*sizeof(char*));
 	match(text);
 	XMapRaised(dpy, win);
 }
@@ -806,11 +842,13 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-sf")) {
 			if(++i < argc) selfgcolor = argv[i];
 		}
+		else if(!strcmp(argv[i], "-xs"))
+			xmms = True;
 		else if(!strcmp(argv[i], "-v"))
 			eprint("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n");
 		else
 			eprint("usage: dmenu [-i] [-b] [-e <xid>] [-l <lines>] [-fn <font>] [-nb <color>]\n"
-			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-v]\n");
+			       "             [-nf <color>] [-p <prompt>] [-sb <color>] [-sf <color>] [-xs] [-v]\n");
 	if(!setlocale(LC_CTYPE, "") || !XSupportsLocale())
 		fprintf(stderr, "warning: no locale support\n");
 	if(!(dpy = XOpenDisplay(NULL)))

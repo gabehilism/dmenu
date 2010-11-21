@@ -7,3 +7,4 @@ static const char *normfgcolor = "#000000";
 static const char *selbgcolor  = "#0066ff";
 static const char *selfgcolor  = "#ffffff";
 static unsigned int spaceitem  = 30; /* px between menu items */
+static unsigned int maxtokens  = 16; /* max. tokens for pattern matching */
