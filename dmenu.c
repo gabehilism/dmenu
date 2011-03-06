@@ -45,6 +45,7 @@ static void readstdin(void);
 static void run(void);
 static void setup(void);
 static void alarmhandler(int signum);
+static void handle_return(char* value);
 static void usage(void);
 
 static char text[BUFSIZ];
@@ -67,6 +68,7 @@ static unsigned long selcol[ColLast];
 static Atom utf8;
 static Bool message = False;
 static Bool nostdin = False;
+static Bool returnearly = False;
 static Bool topbar = True;
 static TextPosition messageposition = LEFT;
 static DC *dc;
@@ -98,6 +100,8 @@ main(int argc, char *argv[]) {
             message = True, messageposition = RIGHT;
 		else if(!strcmp(argv[i], "-i") || !strcmp(argv[i], "--insensitive"))
 			fstrncmp = strncasecmp;
+		else if(!strcmp(argv[i], "-r") || !strcmp(argv[i], "--return-early"))
+			returnearly = True;
         else if(i==argc-1)
             usage();
         /* opts that need 1 arg */
@@ -395,9 +399,7 @@ keypress(XKeyEvent *ev) {
 		break;
 	case XK_Return:
 	case XK_KP_Enter:
-		fputs((sel && !(ev->state & ShiftMask)) ? sel->text : text, stdout);
-		fflush(stdout);
-		exit(EXIT_SUCCESS);
+        handle_return((sel && !(ev->state & ShiftMask)) ? sel->text : text);
 	case XK_Right:
 		if(cursor < len) {
 			cursor = nextrune(+1);
@@ -463,6 +465,10 @@ match(void) {
 	}
 	curr = prev = next = sel = matches;
 	calcoffsets();
+
+    if(returnearly && !curr->right) {
+        handle_return(curr->text);
+    }
 }
 
 size_t
@@ -597,6 +603,12 @@ setup(void) {
 	match();
 }
 
+void handle_return(char* value) {
+    fputs(value, stdout);
+    fflush(stdout);
+    exit(EXIT_SUCCESS);
+}
+
 void
 alarmhandler(int signum) {
     exit(EXIT_SUCCESS);
@@ -622,6 +634,7 @@ usage(void) {
     printf("                                      input field\n");
     printf("  -po, --prompt-only  PROMPT        same as -p but don't wait for stdin\n");
     printf("                                      useful for a prompt with no menu\n");
+    printf("  -r,  --return-early               return as soon as a single match is found\n");
     printf("  -fn, --font-name FONT             font or font set to be used\n");
     printf("  -nb, --normal-background COLOR    normal background color\n");
     printf("                                      #RGB, #RRGGBB, and color names supported\n");
