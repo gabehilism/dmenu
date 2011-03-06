@@ -65,8 +65,9 @@ static const char *selfgcolor  = "#ffffff";
 static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static Atom utf8;
-static Bool topbar = True;
 static Bool message = False;
+static Bool nostdin = False;
+static Bool topbar = True;
 static TextPosition messageposition = LEFT;
 static DC *dc;
 static Item *items = NULL;
@@ -95,16 +96,21 @@ main(int argc, char *argv[]) {
             message = True, messageposition = CENTRE;
 		else if(!strcmp(argv[i], "-er"))
             message = True, messageposition = RIGHT;
-		else if(!strcmp(argv[i], "-et"))
-			timeout = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
+        else if(i==argc-1)
+            usage();
+        /* opts that need 1 arg */
+		else if(!strcmp(argv[i], "-et"))
+			timeout = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-l"))
 			lines = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-m"))
 			monitor = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-p"))
 			prompt = argv[++i];
+		else if(!strcmp(argv[i], "-po"))
+			prompt = argv[++i], nostdin = True;
 		else if(!strcmp(argv[i], "-fn"))
 			font = argv[++i];
 		else if(!strcmp(argv[i], "-nb"))
@@ -125,7 +131,9 @@ main(int argc, char *argv[]) {
 
 	dc = initdc();
 	initfont(dc, font);
-    readstdin();
+    if(!nostdin) {
+        readstdin();
+    }
 	setup();
     run();
 
@@ -597,21 +605,22 @@ usage(void) {
     printf("Usage: dmenu [OPTION]...\n");
     printf("Display newline-separated input stdin as a menubar\n");
     printf("\n");
-    printf("  -e          dmenu displays text from stdin with no user interaction\n");
+    printf("  -e          Dmenu displays text from stdin with no user interaction\n");
     printf("  -ec         The same as using -e but align text in the centre.\n");
     printf("  -er         The same as using -e but align text to the right.\n");
-    printf("  -et secs    when using -e, -ec, or -er close the message after the given number of seconds\n");
-    printf("  -b          dmenu appears at the bottom of the screen.\n");
-    printf("  -i          dmenu matches menu items case insensitively.\n");
-    printf("  -l lines    dmenu lists items vertically, within the given number of lines.\n");
-    printf("  -m monitor  dmenu appears on the given Xinerama screen.\n");
-    printf("  -p prompt   defines the prompt to be displayed to the left of the input field.\n");
-    printf("  -fn font    defines the font or font set used.\n");
-    printf("  -nb color   defines the normal background color.  #RGB, #RRGGBB, and color names are supported.\n");
-    printf("  -nf color   defines the normal foreground color.\n");
-    printf("  -sb color   defines the selected background color.\n");
-    printf("  -sf color   defines the selected foreground color.\n");
-    printf("  -v          prints version information to standard output, then exits.\n");
+    printf("  -et secs    When using -e, -ec, or -er close the message after the given number of seconds\n");
+    printf("  -b          Dmenu appears at the bottom of the screen.\n");
+    printf("  -i          Dmenu matches menu items case insensitively.\n");
+    printf("  -l lines    Dmenu lists items vertically, within the given number of lines.\n");
+    printf("  -m monitor  Dmenu appears on the given Xinerama screen.\n");
+    printf("  -p prompt   Defines the prompt to be displayed to the left of the input field.\n");
+    printf("  -po prompt  The same as using -p but dmenu doesn't wait for stdin. Useful when you only want a prompt and no menu.\n");
+    printf("  -fn font    Defines the font or font set used.\n");
+    printf("  -nb color   Defines the normal background color.  #RGB, #RRGGBB, and color names are supported.\n");
+    printf("  -nf color   Defines the normal foreground color.\n");
+    printf("  -sb color   Defines the selected background color.\n");
+    printf("  -sf color   Defines the selected foreground color.\n");
+    printf("  -v          Prints version information to standard output, then exits.\n");
 
 	exit(EXIT_FAILURE);
 }
