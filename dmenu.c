@@ -84,42 +84,42 @@ main(int argc, char *argv[]) {
 	progname = "dmenu";
 	for(i = 1; i < argc; i++)
 		/* single flags */
-		if(!strcmp(argv[i], "-v")) {
+		if(!strcmp(argv[i], "-v") || !strcmp(argv[1], "--version")) {
 			fputs("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details\n", stdout);
 			exit(EXIT_SUCCESS);
 		}
-		else if(!strcmp(argv[i], "-b"))
+		else if(!strcmp(argv[i], "-b") && !strcmp(argv[i], "--bottom"))
 			topbar = False;
-		else if(!strcmp(argv[i], "-e"))
+		else if(!strcmp(argv[i], "-e") || !strcmp(argv[i], "--echo"))
             message = True;
-		else if(!strcmp(argv[i], "-ec"))
+		else if(!strcmp(argv[i], "-ec") || !strcmp(argv[i], "--echo-centre"))
             message = True, messageposition = CENTRE;
-		else if(!strcmp(argv[i], "-er"))
+		else if(!strcmp(argv[i], "-er") || !strcmp(argv[i], "--echo-right"))
             message = True, messageposition = RIGHT;
-		else if(!strcmp(argv[i], "-i"))
+		else if(!strcmp(argv[i], "-i") || !strcmp(argv[i], "--insensitive"))
 			fstrncmp = strncasecmp;
         else if(i==argc-1)
             usage();
         /* opts that need 1 arg */
-		else if(!strcmp(argv[i], "-et"))
+		else if(!strcmp(argv[i], "-et") || !strcmp(argv[i], "--echo-timeout"))
 			timeout = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-l"))
+		else if(!strcmp(argv[i], "-l") || !strcmp(argv[i], "--lines"))
 			lines = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-m"))
+		else if(!strcmp(argv[i], "-m") || !strcmp(argv[i], "--monitor"))
 			monitor = atoi(argv[++i]);
-		else if(!strcmp(argv[i], "-p"))
+		else if(!strcmp(argv[i], "-p") || !strcmp(argv[i], "--prompt"))
 			prompt = argv[++i];
-		else if(!strcmp(argv[i], "-po"))
+		else if(!strcmp(argv[i], "-po") || !strcmp(argv[i], "--prompt-only"))
 			prompt = argv[++i], nostdin = True;
-		else if(!strcmp(argv[i], "-fn"))
+		else if(!strcmp(argv[i], "-fn") || !strcmp(argv[i], "--font-name"))
 			font = argv[++i];
-		else if(!strcmp(argv[i], "-nb"))
+		else if(!strcmp(argv[i], "-nb") || !strcmp(argv[i], "--normal-background"))
 			normbgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-nf"))
+		else if(!strcmp(argv[i], "-nf") || !strcmp(argv[i], "--normal-foreground"))
 			normfgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-sb"))
+		else if(!strcmp(argv[i], "-sb") || !strcmp(argv[i], "--selected-background"))
 			selbgcolor = argv[++i];
-		else if(!strcmp(argv[i], "-sf"))
+		else if(!strcmp(argv[i], "-sf") || !strcmp(argv[i], "--selected-foreground"))
 			selfgcolor = argv[++i];
 		else
 			usage();
@@ -605,22 +605,28 @@ usage(void) {
     printf("Usage: dmenu [OPTION]...\n");
     printf("Display newline-separated input stdin as a menubar\n");
     printf("\n");
-    printf("  -e          Dmenu displays text from stdin with no user interaction\n");
-    printf("  -ec         The same as using -e but align text in the centre.\n");
-    printf("  -er         The same as using -e but align text to the right.\n");
-    printf("  -et secs    When using -e, -ec, or -er close the message after the given number of seconds\n");
-    printf("  -b          Dmenu appears at the bottom of the screen.\n");
-    printf("  -i          Dmenu matches menu items case insensitively.\n");
-    printf("  -l lines    Dmenu lists items vertically, within the given number of lines.\n");
-    printf("  -m monitor  Dmenu appears on the given Xinerama screen.\n");
-    printf("  -p prompt   Defines the prompt to be displayed to the left of the input field.\n");
-    printf("  -po prompt  The same as using -p but dmenu doesn't wait for stdin. Useful when you only want a prompt and no menu.\n");
-    printf("  -fn font    Defines the font or font set used.\n");
-    printf("  -nb color   Defines the normal background color.  #RGB, #RRGGBB, and color names are supported.\n");
-    printf("  -nf color   Defines the normal foreground color.\n");
-    printf("  -sb color   Defines the selected background color.\n");
-    printf("  -sf color   Defines the selected foreground color.\n");
-    printf("  -v          Prints version information to standard output, then exits.\n");
+    printf("  -e,  --echo                       display text from stdin with no user\n");
+    printf("                                      interaction\n");
+    printf("  -ec, --echo-centre                same as -e but align text centrally\n");
+    printf("  -er, --echo-right                 same as -e but align text right\n");
+    printf("  -et, --echo-timeout SECS          close the message after SEC seconds\n");
+    printf("                                      when using -e, -ec, or -er\n");
+    printf("  -b,  --bottom                     dmenu appears at the bottom of the screen\n");
+    printf("  -i,  --insensitive                dmenu matches menu items case insensitively\n");
+    printf("  -l,  --lines LINES                dmenu lists items vertically, within the\n");
+    printf("                                      given number of lines\n");
+    printf("  -m,  --monitor MONITOR            dmenu appears on the given Xinerama screen\n");
+    printf("  -p,  --prompt  PROMPT             prompt to be displayed to the left of the\n");
+    printf("                                      input field\n");
+    printf("  -po, --prompt-only  PROMPT        same as -p but don't wait for stdin\n");
+    printf("                                      useful for a prompt with no menu\n");
+    printf("  -fn, --font-name FONT             font or font set to be used\n");
+    printf("  -nb, --normal-background COLOR    normal background color\n");
+    printf("                                      #RGB, #RRGGBB, and color names supported\n");
+    printf("  -nf, --normal-foreground COLOR    normal foreground color\n");
+    printf("  -sb, --selected-background COLOR  selected background color\n");
+    printf("  -sf, --selected-foreground COLOR  selected foreground color\n");
+    printf("  -v,  --version                    display version information\n");
 
 	exit(EXIT_FAILURE);
 }
