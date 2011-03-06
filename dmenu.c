@@ -25,6 +25,12 @@ struct Item {
 	Item *left, *right;  /* traverses matching items */
 };
 
+typedef enum {
+    LEFT,
+    RIGHT,
+    CENTRE
+} TextPosition;
+
 static void appenditem(Item *item, Item **list, Item **last);
 static void calcoffsets(void);
 static void drawmenu(void);
@@ -61,7 +67,7 @@ static unsigned long selcol[ColLast];
 static Atom utf8;
 static Bool topbar = True;
 static Bool message = False;
-static Bool right = False;
+static TextPosition messageposition = LEFT;
 static DC *dc;
 static Item *items = NULL;
 static Item *matches, *sel;
@@ -85,8 +91,10 @@ main(int argc, char *argv[]) {
 			topbar = False;
 		else if(!strcmp(argv[i], "-e"))
             message = True;
+		else if(!strcmp(argv[i], "-ec"))
+            message = True, messageposition = CENTRE;
 		else if(!strcmp(argv[i], "-er"))
-            message = right = True;
+            message = True, messageposition = RIGHT;
 		else if(!strcmp(argv[i], "-et"))
 			timeout = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-i"))
@@ -159,17 +167,20 @@ drawmenu(void) {
 
 	dc->x = 0;
 	dc->y = 0;
+    dc->w = 0;
 	dc->h = bh;
     drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
 
 	if(message) {
-        if(right) { // Find starting position for right-aligned text
+        if(messageposition == RIGHT || messageposition == CENTRE) { // Find starting position aligned text
             dc->x = mw;
             for(item = curr; item != next; item = item->right) {
                 dc->x -= textw(dc, item->text);
             }
         }
-        dc->w = 0;
+        if(messageposition == CENTRE) {
+            dc->x /= 2;
+        }
         for(item = curr; item != next; item = item->right) {
             dc->w = textw(dc, item->text);
             drawtext(dc, item->text, normcol);
@@ -587,8 +598,9 @@ usage(void) {
     printf("Display newline-separated input stdin as a menubar\n");
     printf("\n");
     printf("  -e          dmenu displays text from stdin with no user interaction\n");
+    printf("  -ec         The same as using -e but align text in the centre.\n");
     printf("  -er         The same as using -e but align text to the right.\n");
-    printf("  -et secs    when using -e or -er, close the message after the given number of seconds\n");
+    printf("  -et secs    when using -e, -ec, or -er close the message after the given number of seconds\n");
     printf("  -b          dmenu appears at the bottom of the screen.\n");
     printf("  -i          dmenu matches menu items case insensitively.\n");
     printf("  -l lines    dmenu lists items vertically, within the given number of lines.\n");
