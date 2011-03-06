@@ -1,8 +1,10 @@
 /* See LICENSE file for copyright and license details. */
 #include <ctype.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -36,14 +38,17 @@ static void paste(void);
 static void readstdin(void);
 static void run(void);
 static void setup(void);
+static void alarmhandler(int signum);
 static void usage(void);
 
 static char text[BUFSIZ];
 static int bh, mw, mh;
 static int inputw = 0;
+static int itemcount = 0;
 static int lines = 0;
 static int monitor = -1;
 static int promptw;
+static int timeout = 3;
 static size_t cursor = 0;
 static const char *font = NULL;
 static const char *prompt = NULL;
@@ -55,6 +60,7 @@ static unsigned long normcol[ColLast];
 static unsigned long selcol[ColLast];
 static Atom utf8;
 static Bool topbar = True;
+static Bool message = False;
 static DC *dc;
 static Item *items = NULL;
 static Item *matches, *sel;
@@ -76,6 +82,10 @@ main(int argc, char *argv[]) {
 		}
 		else if(!strcmp(argv[i], "-b"))
 			topbar = False;
+		else if(!strcmp(argv[i], "-e"))
+            message = True;
+		else if(!strcmp(argv[i], "-et"))
+			timeout = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-i"))
 			fstrncmp = strncasecmp;
 		else if(i == argc-1)
@@ -100,11 +110,16 @@ main(int argc, char *argv[]) {
 		else
 			usage();
 
+    if(message) {
+        signal(SIGALRM, alarmhandler);
+        alarm(timeout);
+    }
+
 	dc = initdc();
 	initfont(dc, font);
-	readstdin();
+    readstdin();
 	setup();
-	run();
+    run();
 
 	return EXIT_FAILURE;  /* should not reach */
 }
@@ -142,43 +157,56 @@ drawmenu(void) {
 	int curpos;
 	Item *item;
 
+	mh = (MIN(lines + 1, itemcount)) * bh;
+
 	dc->x = 0;
 	dc->y = 0;
 	dc->h = bh;
 	drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
 
-	if(prompt) {
-		dc->w = promptw;
-		drawtext(dc, prompt, selcol);
-		dc->x = dc->w;
+	if(message) {
+        dc->w = 0;
+        for(item = curr; item != next; item = item->right) {
+            dc->w = textw(dc, item->text);
+            drawtext(dc, item->text, selcol);
+            dc->x = dc->w;
+        }
 	}
-	dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
-	drawtext(dc, text, normcol);
-	if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
-		drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
+    else {
+        if(prompt) {
+            dc->w = promptw;
+            drawtext(dc, prompt, selcol);
+            dc->x = dc->w;
+        }
+        dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
+        drawtext(dc, text, normcol);
+        if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
+            drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
 
-	if(lines > 0) {
-		dc->w = mw - dc->x;
-		for(item = curr; item != next; item = item->right) {
-			dc->y += dc->h;
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
-		}
-	}
-	else if(matches) {
-		dc->x += inputw;
-		dc->w = textw(dc, "<");
-		if(curr->left)
-			drawtext(dc, "<", normcol);
-		for(item = curr; item != next; item = item->right) {
-			dc->x += dc->w;
-			dc->w = MIN(textw(dc, item->text), mw - dc->x - textw(dc, ">"));
-			drawtext(dc, item->text, (item == sel) ? selcol : normcol);
-		}
-		dc->w = textw(dc, ">");
-		dc->x = mw - dc->w;
-		if(next)
-			drawtext(dc, ">", normcol);
-	}
+        if(lines > 0) {
+            dc->w = mw - dc->x;
+            for(item = curr; item != next; item = item->right) {
+                dc->y += dc->h;
+                drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+            }
+        }
+        else if(matches) {
+            dc->x += inputw;
+            dc->w = textw(dc, "<");
+            if(curr->left)
+                drawtext(dc, "<", normcol);
+            for(item = curr; item != next; item = item->right) {
+                dc->x += dc->w;
+                dc->w = MIN(textw(dc, item->text), mw - dc->x - textw(dc, ">"));
+                drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+            }
+            dc->w = textw(dc, ">");
+            dc->x = mw - dc->w;
+            if(next) {
+                drawtext(dc, ">", normcol);
+            }
+        }
+    }
 	mapdc(dc, win, mw, mh);
 }
 
@@ -196,12 +224,14 @@ void
 grabkeyboard(void) {
 	int i;
 
-	for(i = 0; i < 1000; i++) {
-		if(!XGrabKeyboard(dc->dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime))
-			return;
-		usleep(1000);
-	}
-	eprintf("cannot grab keyboard\n");
+    if(!message) {
+        for(i = 0; i < 1000; i++) {
+            if(!XGrabKeyboard(dc->dpy, root, True, GrabModeAsync, GrabModeAsync, CurrentTime))
+                return;
+            usleep(1000);
+        }
+        eprintf("cannot grab keyboard\n");
+    }
 }
 
 void
@@ -375,12 +405,15 @@ match(void) {
 	len = strlen(text);
 	matches = lexact = lprefix = lsubstr = itemend = exactend = prefixend = substrend = NULL;
 	for(item = items; item; item = item->next)
-		if(!fstrncmp(text, item->text, len + 1))
+		if(!fstrncmp(text, item->text, len + 1)) {
 			appenditem(item, &lexact, &exactend);
-		else if(!fstrncmp(text, item->text, len))
+        }
+		else if(!fstrncmp(text, item->text, len)) {
 			appenditem(item, &lprefix, &prefixend);
-		else if(fstrstr(item->text, text))
+        }
+		else if(fstrstr(item->text, text)) {
 			appenditem(item, &lsubstr, &substrend);
+        }
 
 	if(lexact) {
 		matches = lexact;
@@ -436,12 +469,17 @@ readstdin(void) {
 	Item *item, **end;
 
 	for(end = &items; fgets(buf, sizeof buf, stdin); *end = item, end = &item->next) {
-		if((p = strchr(buf, '\n')))
+        itemcount++;
+
+		if((p = strchr(buf, '\n'))) {
 			*p = '\0';
-		if(!(item = malloc(sizeof *item)))
+        }
+		if(!(item = malloc(sizeof *item))) {
 			eprintf("cannot malloc %u bytes\n", sizeof *item);
-		if(!(item->text = strdup(buf)))
+        }
+		if(!(item->text = strdup(buf))) {
 			eprintf("cannot strdup %u bytes\n", strlen(buf)+1);
+        }
 		item->next = item->left = item->right = NULL;
 		inputw = MAX(inputw, textw(dc, item->text));
 	}
@@ -492,7 +530,7 @@ setup(void) {
 	/* menu geometry */
 	bh = dc->font.height + 2;
 	lines = MAX(lines, 0);
-	mh = (lines + 1) * bh;
+	mh = (MIN(lines + 1, itemcount)) * bh;
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int i, di;
@@ -535,8 +573,28 @@ setup(void) {
 }
 
 void
+alarmhandler(int signum) {
+    exit(EXIT_SUCCESS);
+}
+
+void
 usage(void) {
-	fputs("usage: dmenu [-b] [-i] [-l lines] [-m monitor] [-p prompt] [-fn font]\n"
-	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
+    printf("Usage: dmenu [OPTION]...\n");
+    printf("Display newline-separated input stdin as a menubar\n");
+    printf("\n");
+    printf("  -e          dmenu displays text from stdin with no user interaction\n");
+    printf("  -et secs    when using -e, close the message after the given number of seconds\n");
+    printf("  -b          dmenu appears at the bottom of the screen.\n");
+    printf("  -i          dmenu matches menu items case insensitively.\n");
+    printf("  -l lines    dmenu lists items vertically, within the given number of lines.\n");
+    printf("  -m monitor  dmenu appears on the given Xinerama screen.\n");
+    printf("  -p prompt   defines the prompt to be displayed to the left of the input field.\n");
+    printf("  -fn font    defines the font or font set used.\n");
+    printf("  -nb color   defines the normal background color.  #RGB, #RRGGBB, and color names are supported.\n");
+    printf("  -nf color   defines the normal foreground color.\n");
+    printf("  -sb color   defines the selected background color.\n");
+    printf("  -sf color   defines the selected foreground color.\n");
+    printf("  -v          prints version information to standard output, then exits.\n");
+
 	exit(EXIT_FAILURE);
 }
