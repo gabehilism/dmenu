@@ -1,0 +1,29 @@
+#!/bin/sh
+
+max_length=140
+twitter="/usr/bin/ttytter"
+
+function get_tweet {
+    message=$1
+
+    if [ -z "$message" ]; then
+        tweet=$(dmenu -po "Tweet: ")
+    else
+        tweet=$(echo -n "$message" | dmenu -p "Tweet: ")
+    fi
+
+    length=$(echo -n "$tweet" | wc -m)
+
+    # Deal with any problems
+    if [ $length -gt $max_length ]; then
+        get_tweet "Tweet too long: $length/$max_length characterss"
+    else
+        echo $tweet
+    fi
+}
+
+tweet=$(get_tweet)
+
+if [ -n "$tweet" ]; then
+    echo $tweet | $twitter && echo "Tweet successful" | dmenu -e -et 1 || echo "Tweet FAILED" | dmenu -e -et 3
+fi
