@@ -214,14 +214,16 @@ drawmenu(void) {
             }
         }
         else if(matches) {
-            dc->x += inputw;
-            dc->w = textw(dc, "<");
-            if(curr->left)
+            dc->x += dc->w;
+            if(curr->left) {
+                dc->w = textw(dc, "<");
                 drawtext(dc, "<", normcol);
-            for(item = curr; item != next; item = item->right) {
                 dc->x += dc->w;
+            }
+            for(item = curr; item != next; item = item->right) {
                 dc->w = MIN(textw(dc, item->text), mw - dc->x - textw(dc, ">"));
                 drawtext(dc, item->text, (item == sel) ? selcol : normcol);
+                dc->x += dc->w;
             }
             dc->w = textw(dc, ">");
             dc->x = mw - dc->w;
