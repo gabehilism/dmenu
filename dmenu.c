@@ -77,7 +77,7 @@ main(int argc, char *argv[]) {
 	for(i = 1; i < argc; i++)
 		/* single flags */
 		if(!strcmp(argv[i], "-v")) {
-			fputs("dmenu-"VERSION", © 2006-2010 dmenu engineers, see LICENSE for details\n", stdout);
+			fputs("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details\n", stdout);
 			exit(EXIT_SUCCESS);
 		}
 		else if(!strcmp(argv[i], "-b"))
@@ -168,8 +168,8 @@ drawmenu(void) {
         dc->w = 0;
         for(item = curr; item != next; item = item->right) {
             dc->w = textw(dc, item->text);
-            drawtext(dc, item->text, selcol);
-            dc->x = dc->w;
+            drawtext(dc, item->text, normcol);
+            dc->x += dc->w;
         }
 	}
     else {

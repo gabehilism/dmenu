@@ -33,8 +33,9 @@ is a dynamic menu for X, originally designed for
 It manages huge numbers of user-defined menu items efficiently.
 .P
 dmenu reads a list of newline-separated items from standard input and creates a
-menu.  When the user selects an item or enters any text and presses Return,
-their choice is printed to standard output and dmenu terminates.
+menu (or displays a notification if using -e). When the user selects an item or
+enters any text and presses Return, their choice is printed to standard output
+and dmenu terminates.
 .P
 .B dmenu_run
 is a dmenu script used by dwm which lists programs in the user's PATH and
@@ -47,11 +48,17 @@ is a program used by dmenu_run to find and cache a list of executables.
 .B \-b
 dmenu appears at the bottom of the screen.
 .TP
+.B \-e
+dmenu displays text from stdin with no user interaction.
+.TP
+.BI \-et " secs "
+when using -e, close the message after the given number of seconds
+.TP
 .B \-i
 dmenu matches menu items case insensitively.
 .TP
 .BI \-l " lines"
-dmenu lists items vertically, with the given number of lines.
+dmenu lists items vertically, within the given number of lines.
 .TP
 .BI \-m " monitor"
 dmenu appears on the given Xinerama screen.
