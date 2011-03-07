@@ -90,7 +90,7 @@ main(int argc, char *argv[]) {
 			fputs("dmenu-"VERSION", © 2006-2011 dmenu engineers, see LICENSE for details\n", stdout);
 			exit(EXIT_SUCCESS);
 		}
-		else if(!strcmp(argv[i], "-b") && !strcmp(argv[i], "--bottom"))
+		else if(!strcmp(argv[i], "-b") || !strcmp(argv[i], "--bottom"))
 			topbar = False;
 		else if(!strcmp(argv[i], "-e") || !strcmp(argv[i], "--echo"))
             message = True;
