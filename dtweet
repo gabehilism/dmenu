@@ -25,5 +25,5 @@ function get_tweet {
 tweet=$(get_tweet)
 
 if [ -n "$tweet" ]; then
-    echo $tweet | $twitter && echo "Tweet successful" | dmenu -e -et 1 || echo "Tweet FAILED" | dmenu -e -et 3
+    echo $tweet | $twitter && echo "Tweet successful" | dmenu -b -ec -et 1 || echo "Tweet FAILED" | dmenu -b -ec -et 3
 fi
