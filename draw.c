@@ -49,7 +49,7 @@ drawtextn(DC *dc, const char *text, size_t n, unsigned long col[ColLast]) {
 	int x, y;
 
 	x = dc->x + dc->font.height/2;
-	y = dc->y + dc->font.ascent+1;
+	y = dc->y + dc->font.ascent+1 + dc->text_offset_y;
 
 	XSetForeground(dc->dpy, dc->gc, FG(dc, col));
 	if(dc->font.set)

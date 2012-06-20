@@ -50,6 +50,7 @@ static void usage(void);
 
 static char text[BUFSIZ];
 static int bh, mw, mh;
+static int height = 0;
 static int inputw = 0;
 static int itemcount = 0;
 static int lines = 0;
@@ -107,6 +108,8 @@ main(int argc, char *argv[]) {
         /* opts that need 1 arg */
 		else if(!strcmp(argv[i], "-et") || !strcmp(argv[i], "--echo-timeout"))
 			timeout = atoi(argv[++i]);
+		else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--height"))
+			height = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-l") || !strcmp(argv[i], "--lines"))
 			lines = atoi(argv[++i]);
 		else if(!strcmp(argv[i], "-m") || !strcmp(argv[i], "--monitor"))
@@ -180,8 +183,15 @@ drawmenu(void) {
 	dc->x = 0;
 	dc->y = 0;
     dc->w = 0;
-	dc->h = bh;
-    drawrect(dc, 0, 0, mw, mh, True, BG(dc, normcol));
+	dc->h = height;
+
+    dc->text_offset_y = 0;
+
+    if(mh < height) {
+        dc->text_offset_y = (height - mh) / 2;
+    }
+
+    drawrect(dc, 0, 0, mw, height, True, BG(dc, normcol));
 
 	if(message) {
         if(messageposition == RIGHT || messageposition == CENTRE) { // Find starting position aligned text
@@ -207,8 +217,8 @@ drawmenu(void) {
         }
         dc->w = (lines > 0 || !matches) ? mw - dc->x : inputw;
         drawtext(dc, text, normcol);
-        if((curpos = textnw(dc, text, cursor) + dc->h/2 - 2) < dc->w)
-            drawrect(dc, curpos, 2, 1, dc->h - 4, True, FG(dc, normcol));
+        if((curpos = textnw(dc, text, cursor) + mh/2 - 2) < dc->w)
+            drawrect(dc, curpos, 2 + dc->text_offset_y, 1, mh - 4, True, FG(dc, normcol));
 
         if(lines > 0) {
             dc->w = mw - dc->x;
@@ -236,7 +246,7 @@ drawmenu(void) {
             }
         }
     }
-	mapdc(dc, win, mw, mh);
+	mapdc(dc, win, mw, height);
 }
 
 char *
@@ -562,6 +572,10 @@ setup(void) {
 	bh = dc->font.height + 2;
 	lines = MAX(lines, 0);
 	mh = (MAX(MIN(lines + 1, itemcount), 1)) * bh;
+
+    if(height < mh) {
+        height = mh;
+    }
 #ifdef XINERAMA
 	if((info = XineramaQueryScreens(dc->dpy, &n))) {
 		int i, di;
@@ -574,7 +588,7 @@ setup(void) {
 			|| (monitor < 0 && INRECT(x, y, info[i].x_org, info[i].y_org, info[i].width, info[i].height)))
 				break;
 		x = info[i].x_org;
-		y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
+		y = info[i].y_org + (topbar ? 0 : info[i].height - height);
 		mw = info[i].width;
 		XFree(info);
 	}
@@ -582,20 +596,20 @@ setup(void) {
 #endif
 	{
 		x = 0;
-		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - mh;
+		y = topbar ? 0 : DisplayHeight(dc->dpy, screen) - height;
 		mw = DisplayWidth(dc->dpy, screen);
 	}
 	/* menu window */
 	wa.override_redirect = True;
 	wa.background_pixmap = ParentRelative;
 	wa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask;
-	win = XCreateWindow(dc->dpy, root, x, y, mw, mh, 0,
+	win = XCreateWindow(dc->dpy, root, x, y, mw, height, 0,
 	                    DefaultDepth(dc->dpy, screen), CopyFromParent,
 	                    DefaultVisual(dc->dpy, screen),
 	                    CWOverrideRedirect | CWBackPixmap | CWEventMask, &wa);
 
 	grabkeyboard();
-	resizedc(dc, mw, mh);
+	resizedc(dc, mw, height);
 	inputw = MIN(inputw, mw/3);
 	promptw = prompt ? textw(dc, prompt) : 0;
 	XMapRaised(dc->dpy, win);

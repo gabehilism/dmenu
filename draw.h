@@ -7,6 +7,7 @@ enum { ColBG, ColFG, ColBorder, ColLast };
 
 typedef struct {
 	int x, y, w, h;
+    int text_offset_y;
 	Bool invert;
 	Display *dpy;
 	GC gc;
