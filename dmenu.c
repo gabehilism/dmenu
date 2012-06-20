@@ -640,6 +640,7 @@ usage(void) {
     printf("  -et, --echo-timeout SECS          close the message after SEC seconds\n");
     printf("                                      when using -e, -ec, or -er\n");
     printf("  -b,  --bottom                     dmenu appears at the bottom of the screen\n");
+    printf("  -h,  --height N                   set dmenu to be N pixels high\n");
     printf("  -i,  --insensitive                dmenu matches menu items case insensitively\n");
     printf("  -l,  --lines LINES                dmenu lists items vertically, within the\n");
     printf("                                      given number of lines\n");

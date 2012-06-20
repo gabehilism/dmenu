@@ -44,15 +44,23 @@ executes the selected item.
 .B dmenu_path
 is a program used by dmenu_run to find and cache a list of executables.
 .SH OPTIONS
+.B \-e
+dmenu displays text from stdin with no user interaction.
+.TP
+.B \-ec
+same as -e but text is aligned centrally.
+.TP
+.B \-er
+same as -e but text is aligned to the right.
+.TP
+.BI \-et " secs "
+when using -e, close the message after the given number of seconds
 .TP
 .B \-b
 dmenu appears at the bottom of the screen.
 .TP
-.B \-e
-dmenu displays text from stdin with no user interaction.
-.TP
-.BI \-et " secs "
-when using -e, close the message after the given number of seconds
+.BI \-h " height"
+dmenu is drawn at least the given number of pixels high.
 .TP
 .B \-i
 dmenu matches menu items case insensitively.
@@ -65,6 +73,12 @@ dmenu appears on the given Xinerama screen.
 .TP
 .BI \-p " prompt"
 defines the prompt to be displayed to the left of the input field.
+.TP
+.BI \-po " prompt"
+same as -p but don't wait for stdin - useful for a prompt with no selection options.
+.TP
+.B \-r
+Return as soon as a single match is found. i.e. don't wait for the user to press return.
 .TP
 .BI \-fn " font"
 defines the font or font set used.
