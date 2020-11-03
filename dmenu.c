@@ -477,7 +477,7 @@ match(void) {
 	calcoffsets();
 
     if(returnearly && !curr->right) {
-        handle_return(curr->text);
+        // handle_return(curr->text);
     }
 }
 
